@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>美味便當 - 線上訂購系統</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --primary: #e67e22; --light: #fdfaf6; --dark: #333; --success: #27ae60; --danger: #e74c3c; }
+        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; margin: 0; background: var(--light); color: var(--dark); padding-bottom: 100px; }
+        
+        /* 頁首與狀態 */
+        header { background: var(--primary); color: white; padding: 1rem; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .status-badge { font-size: 12px; padding: 5px 12px; border-radius: 20px; background: rgba(255,255,255,0.2); margin-top: 8px; display: inline-block; }
+        
+        /* 遮罩樣式 */
+        .hidden { display: none !important; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); color: white; display: flex; align-items: center; justify-content: center; z-index: 1000; text-align: center; padding: 20px; box-sizing: border-box; }
+
+        .container { padding: 15px; max-width: 600px; margin: 0 auto; }
+        .product-card { background: white; border-radius: 12px; display: flex; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); align-items: center; }
+        .product-img { width: 90px; height: 90px; border-radius: 10px; object-fit: cover; border: 1px solid #eee; }
+        .product-info { flex: 1; padding-left: 15px; }
+        .product-name { font-weight: bold; font-size: 18px; margin: 0; color: #333; }
+        .product-price { color: var(--primary); font-weight: bold; font-size: 16px; margin: 5px 0; }
+        
+        /* 數量控制器 */
+        .stepper { display: flex; align-items: center; gap: 15px; margin-top: 10px; }
+        .stepper button { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #ddd; background: white; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+        .stepper span { font-weight: bold; font-size: 18px; min-width: 25px; text-align: center; }
+
+        /* 訂購表單 */
+        .form-card { background: white; padding: 20px; border-radius: 12px; margin-top: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .form-card h3 { margin: 0 0 15px 0; color: var(--primary); }
+        .input-group { margin-bottom: 12px; }
+        .input-group label { display: block; font-size: 14px; margin-bottom: 5px; color: #666; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+
+        /* 確認訂單 彈窗 (二次確認功能) */
+        .confirm-modal { background: white; color: #333; width: 95%; max-width: 400px; border-radius: 15px; padding: 25px; text-align: left; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .confirm-modal h2 { color: var(--primary); margin-top: 0; text-align: center; font-size: 20px; }
+        .confirm-list { margin: 15px 0; border-top: 1px dashed #ddd; border-bottom: 1px dashed #ddd; padding: 10px 0; max-height: 200px; overflow-y: auto; }
+        .confirm-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 16px; }
+        .confirm-btns { display: grid; grid-template-columns: 1fr 1.5fr; gap: 10px; margin-top: 20px; }
+        .btn-cancel { background: #eee; color: #666; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-confirm { background: var(--success); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        /* 底部欄 */
+        .footer-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #eee; padding: 15px 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 200; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        .total-amount { font-size: 22px; font-weight: bold; color: var(--primary); }
+        .btn-order { background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .btn-order:disabled { background: #ccc; }
+    </style>
+</head>
+<body>
+
+    <div id="closed-msg" class="overlay hidden">
+        <div>
+            <h2 style="color: var(--primary);">目前非訂購時段 🍱</h2>
+            <p id="open-time-hint" style="line-height: 1.6;"></p>
+        </div>
+    </div>
+
+    <div id="confirm-overlay" class="overlay hidden">
+        <div class="confirm-modal">
+            <h2>核對訂單內容</h2>
+            <div id="confirm-user-info" style="font-size: 14px; color: #666; margin-bottom: 10px; background: #f9f9f9; padding: 8px; border-radius: 4px;"></div>
+            <div class="confirm-list" id="confirm-items-list">
+                </div>
+            <div style="text-align: right; font-size: 20px; font-weight: bold; margin-top: 10px;">
+                合計：NT$ <span id="confirm-total-val">0</span>
+            </div>
+            <div class="confirm-btns">
+                <button class="btn-cancel" onclick="closeConfirmModal()">回頭修改</button>
+                <button class="btn-confirm" id="final-submit-btn" onclick="realSubmitOrder()">確認無誤，送出</button>
+            </div>
+        </div>
+    </div>
+
+    <header>
+        <h1 style="margin:0; font-size: 22px;">🍱 美味便當店</h1>
+        <div id="status-text" class="status-badge">同步營業狀態中...</div>
+    </header>
+
+    <div class="container">
+        <div id="product-list"></div>
+
+        <div class="form-card">
+            <h3>訂購人資訊</h3>
+            <div class="input-group"><label>取餐人姓名</label><input type="text" id="cust-name" placeholder="請填寫姓名"></div>
+            <div class="input-group"><label>聯絡電話</label><input type="tel" id="cust-phone" placeholder="請填寫手機號碼"></div>
+            <div class="input-group"><label>備註 (選填)</label><input type="text" id="cust-note" placeholder="例如：飯少、不辣"></div>
+        </div>
+    </div>
+
+    <div class="footer-bar">
+        <div class="total-amount">NT$ <span id="total-val">0</span></div>
+        <button id="submit-btn" class="btn-order" onclick="showConfirmModal()">送出訂單</button>
+    </div>
+
+    <script>
+        // === 1. 配置設定 ===
+       const SUPABASE_URL = 'https://jizwmppcyjyhmrvrdwqi.supabase.co'; 
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppendtcHBjeWp5aG1ydnJkd3FpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjA3MTAsImV4cCI6MjA3NjEzNjcxMH0.H5I0Z-l9cA7g39ZhwAKJ25Y9svIuL86HCqGnNL4ADzM'; 
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let products = [];
+        let cart = {}; 
+
+        // --- 2. 檢查營業狀態 (解決遮罩衝突) ---
+        async function checkBusinessStatus() {
+            const now = new Date();
+            const day = now.getDay(); 
+            const currentTime = now.toTimeString().split(' ')[0]; // 格式 HH:mm:ss
+
+            const { data: schedule } = await supabaseClient.from('store_schedule').select('*').eq('day_of_week', day).single();
+
+            const closedMsg = document.getElementById('closed-msg');
+            const submitBtn = document.getElementById('submit-btn');
+            const statusText = document.getElementById('status-text');
+
+            const isOpen = schedule && schedule.is_enabled && currentTime >= schedule.open_time && currentTime <= schedule.close_time;
+
+            if (isOpen) {
+                closedMsg.classList.add('hidden'); // 營業中務必隱藏遮罩
+                submitBtn.disabled = false;
+                statusText.innerText = `● 營業中 (${schedule.open_time.slice(0,5)}-${schedule.close_time.slice(0,5)})`;
+                statusText.style.background = "rgba(39, 174, 96, 0.4)";
+                return true;
+            } else {
+                closedMsg.classList.remove('hidden'); // 非營業中顯示遮罩
+                document.getElementById('open-time-hint').innerText = (schedule && schedule.is_enabled) 
+                    ? `今日開放時段：\n${schedule.open_time.slice(0,5)} - ${schedule.close_time.slice(0,5)}` 
+                    : "今日公休中";
+                submitBtn.disabled = true;
+                statusText.innerText = "○ 非營業時段";
+                statusText.style.background = "rgba(231, 76, 60, 0.4)";
+                return false;
+            }
+        }
+
+        // --- 3. 產品載入 ---
+        async function fetchProducts() {
+            const { data } = await supabaseClient.from('products').select('*').eq('is_active', true).order('price');
+            products = data;
+            const list = document.getElementById('product-list');
+            list.innerHTML = products.map(p => `
+                <div class="product-card">
+                    <img src="${p.image_url}" class="product-img">
+                    <div class="product-info">
+                        <p class="product-name">${p.name}</p>
+                        <p class="product-price">NT$ ${p.price}</p>
+                        <div class="stepper">
+                            <button onclick="updateQty('${p.id}', -1)">-</button>
+                            <span id="qty-${p.id}">0</span>
+                            <button onclick="updateQty('${p.id}', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateQty(pid, delta) {
+            const current = cart[pid] || 0;
+            const next = Math.max(0, current + delta);
+            cart[pid] = next;
+            document.getElementById(`qty-${pid}`).innerText = next;
+            let total = 0;
+            products.forEach(p => { if (cart[p.id]) total += p.price * cart[p.id]; });
+            document.getElementById('total-val').innerText = total;
+        }
+
+        // --- 4. 二次確認 Modal 邏輯 ---
+        function showConfirmModal() {
+            const name = document.getElementById('cust-name').value;
+            const phone = document.getElementById('cust-phone').value;
+            const total = parseInt(document.getElementById('total-val').innerText);
+
+            if (!name || !phone) { alert("請填寫取餐人姓名與電話"); return; }
+            if (total === 0) { alert("請先選擇便當品項"); return; }
+
+            // 生成確認清單
+            let itemsHtml = "";
+            products.forEach(p => {
+                if (cart[p.id] > 0) {
+                    itemsHtml += `<div class="confirm-item"><span>${p.name} x ${cart[p.id]}</span><span>$${p.price * cart[p.id]}</span></div>`;
+                }
+            });
+
+            document.getElementById('confirm-user-info').innerHTML = `<b>取餐人：</b>${name}<br><b>電話：</b>${phone}`;
+            document.getElementById('confirm-items-list').innerHTML = itemsHtml;
+            document.getElementById('confirm-total-val').innerText = total;
+            document.getElementById('confirm-overlay').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-overlay').classList.add('hidden');
+        }
+
+        // --- 5. 正式下單 ---
+        async function realSubmitOrder() {
+            const name = document.getElementById('cust-name').value;
+            const phone = document.getElementById('cust-phone').value;
+            const note = document.getElementById('cust-note').value;
+            const total = parseInt(document.getElementById('total-val').innerText);
+            const btn = document.getElementById('final-submit-btn');
+
+            btn.disabled = true; btn.innerText = "傳送中...";
+
+            try {
+                // A. 建立訂單
+                const { data: order, error: orderErr } = await supabaseClient.from('orders').insert([
+                    { customer_name: name, customer_phone: phone, note: note, total_amount: total, status: 'pending' }
+                ]).select().single();
+
+                if (orderErr) throw orderErr;
+
+                // B. 建立明細
+                const items = products.filter(p => cart[p.id] > 0).map(p => ({
+                    order_id: order.id,
+                    product_id: p.id,
+                    quantity: cart[p.id],
+                    unit_price: p.price
+                }));
+
+                const { error: itemErr } = await supabaseClient.from('order_items').insert(items);
+                if (itemErr) throw itemErr;
+
+                alert("🎉 訂購成功！請準時前來取餐。");
+                location.reload(); 
+            } catch (err) {
+                alert("下單失敗：" + err.message);
+                btn.disabled = false; btn.innerText = "重新送出";
+            }
+        }
+
+        window.onload = async () => { 
+            const isOpen = await checkBusinessStatus(); 
+            if (isOpen) await fetchProducts(); 
+        };
+    </script>
+</body>
+</html>
