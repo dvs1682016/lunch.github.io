@@ -107,7 +107,7 @@
 
     <script>
        const SUPABASE_URL = 'https://jizwmppcyjyhmrvrdwqi.supabase.co'; 
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppendtcHBjeWp5aG1ydnJkd3FpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjA3MTAsImV4cCI6MjA3NjEzNjcxMH0.H5I0Z-l9cA7g39ZhwAKJ25Y9svIuL86HCqGnNL4ADzM'; 
+       const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppendtcHBjeWp5aG1ydnJkd3FpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjA3MTAsImV4cCI6MjA3NjEzNjcxMH0.H5I0Z-l9cA7g39ZhwAKJ25Y9svIuL86HCqGnNL4ADzM'; 
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -175,7 +175,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         // --- 3. 營業設定 (修正點：內含 days 變數) ---
         async function fetchSchedule() {
             const container = document.getElementById('schedule-list');
-            // 修正：在這裡直接定義 days，保證萬無一失
             const days = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
             
             try {
@@ -240,8 +239,12 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
             win.document.close();
         }
 
-        // 其餘輔助函式
-        function handleLogout() { supabaseClient.auth.signOut(); checkAuth(); }
+        // 修正後的登出功能
+        async function handleLogout() { 
+            await supabaseClient.auth.signOut(); // 等待登出完成
+            checkAuth(); // 重新檢查身份，會觸發 UI 切換回登入頁
+        }
+
         function closeModal() { document.getElementById('product-modal').classList.add('hidden'); }
         function showModal(product = null) {
             document.getElementById('product-modal').classList.remove('hidden');
