@@ -7,36 +7,58 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #e67e22; --light: #fdfaf6; --dark: #333; --success: #27ae60; --danger: #e74c3c; }
-        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; margin: 0; background: var(--light); color: var(--dark); padding-bottom: 100px; }
+        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; margin: 0; background: var(--light); color: var(--dark); padding-bottom: 120px; }
         
-        /* 頁首與狀態 */
         header { background: var(--primary); color: white; padding: 1rem; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .status-badge { font-size: 12px; padding: 5px 12px; border-radius: 20px; background: rgba(255,255,255,0.2); margin-top: 8px; display: inline-block; }
         
-        /* 遮罩樣式 */
         .hidden { display: none !important; }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); color: white; display: flex; align-items: center; justify-content: center; z-index: 1000; text-align: center; padding: 20px; box-sizing: border-box; }
 
         .container { padding: 15px; max-width: 600px; margin: 0 auto; }
-        .product-card { background: white; border-radius: 12px; display: flex; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); align-items: center; }
-        .product-img { width: 90px; height: 90px; border-radius: 10px; object-fit: cover; border: 1px solid #eee; }
-        .product-info { flex: 1; padding-left: 15px; }
-        .product-name { font-weight: bold; font-size: 18px; margin: 0; color: #333; }
-        .product-price { color: var(--primary); font-weight: bold; font-size: 16px; margin: 5px 0; }
-        
-        /* 數量控制器 */
-        .stepper { display: flex; align-items: center; gap: 15px; margin-top: 10px; }
-        .stepper button { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #ddd; background: white; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
-        .stepper span { font-weight: bold; font-size: 18px; min-width: 25px; text-align: center; }
 
-        /* 訂購表單 */
-        .form-card { background: white; padding: 20px; border-radius: 12px; margin-top: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        /* === 核心修改：2 欄佈局 === */
+        #product-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 這裡設定為 2 欄 */
+            gap: 12px; /* 項目之間的間距 */
+            margin-bottom: 20px;
+        }
+
+        .product-card { 
+            background: white; 
+            border-radius: 12px; 
+            display: flex; 
+            flex-direction: column; /* 改為直式排列，讓圖片在上 */
+            padding: 10px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+            text-align: center; /* 內容置中 */
+        }
+
+        .product-img { 
+            width: 100%; 
+            height: 120px; /* 固定高度維持整齊 */
+            border-radius: 8px; 
+            object-fit: cover; 
+            border: 1px solid #eee; 
+            margin-bottom: 8px;
+        }
+
+        .product-info { flex: 1; padding-left: 0; }
+        .product-name { font-weight: bold; font-size: 16px; margin: 0; color: #333; }
+        .product-price { color: var(--primary); font-weight: bold; font-size: 15px; margin: 4px 0; }
+        
+        /* 數量控制器置中 */
+        .stepper { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; }
+        .stepper button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid #ddd; background: white; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+        .stepper span { font-weight: bold; font-size: 16px; min-width: 20px; text-align: center; }
+
+        .form-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .form-card h3 { margin: 0 0 15px 0; color: var(--primary); }
         .input-group { margin-bottom: 12px; }
         .input-group label { display: block; font-size: 14px; margin-bottom: 5px; color: #666; }
         .input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
 
-        /* 確認訂單 彈窗 (二次確認功能) */
         .confirm-modal { background: white; color: #333; width: 95%; max-width: 400px; border-radius: 15px; padding: 25px; text-align: left; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .confirm-modal h2 { color: var(--primary); margin-top: 0; text-align: center; font-size: 20px; }
         .confirm-list { margin: 15px 0; border-top: 1px dashed #ddd; border-bottom: 1px dashed #ddd; padding: 10px 0; max-height: 200px; overflow-y: auto; }
@@ -45,7 +67,6 @@
         .btn-cancel { background: #eee; color: #666; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .btn-confirm { background: var(--success); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-        /* 底部欄 */
         .footer-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #eee; padding: 15px 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 200; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
         .total-amount { font-size: 22px; font-weight: bold; color: var(--primary); }
         .btn-order { background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; }
@@ -65,8 +86,7 @@
         <div class="confirm-modal">
             <h2>核對訂單內容</h2>
             <div id="confirm-user-info" style="font-size: 14px; color: #666; margin-bottom: 10px; background: #f9f9f9; padding: 8px; border-radius: 4px;"></div>
-            <div class="confirm-list" id="confirm-items-list">
-                </div>
+            <div class="confirm-list" id="confirm-items-list"></div>
             <div style="text-align: right; font-size: 20px; font-weight: bold; margin-top: 10px;">
                 合計：NT$ <span id="confirm-total-val">0</span>
             </div>
@@ -99,20 +119,18 @@
     </div>
 
     <script>
-        // === 1. 配置設定 ===
        const SUPABASE_URL = 'https://jizwmppcyjyhmrvrdwqi.supabase.co'; 
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppendtcHBjeWp5aG1ydnJkd3FpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjA3MTAsImV4cCI6MjA3NjEzNjcxMH0.H5I0Z-l9cA7g39ZhwAKJ25Y9svIuL86HCqGnNL4ADzM'; 
+       const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppendtcHBjeWp5aG1ydnJkd3FpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjA3MTAsImV4cCI6MjA3NjEzNjcxMH0.H5I0Z-l9cA7g39ZhwAKJ25Y9svIuL86HCqGnNL4ADzM'; 
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let products = [];
         let cart = {}; 
 
-        // --- 2. 檢查營業狀態 (解決遮罩衝突) ---
         async function checkBusinessStatus() {
             const now = new Date();
             const day = now.getDay(); 
-            const currentTime = now.toTimeString().split(' ')[0]; // 格式 HH:mm:ss
+            const currentTime = now.toTimeString().split(' ')[0];
 
             const { data: schedule } = await supabaseClient.from('store_schedule').select('*').eq('day_of_week', day).single();
 
@@ -123,13 +141,13 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
             const isOpen = schedule && schedule.is_enabled && currentTime >= schedule.open_time && currentTime <= schedule.close_time;
 
             if (isOpen) {
-                closedMsg.classList.add('hidden'); // 營業中務必隱藏遮罩
+                closedMsg.classList.add('hidden');
                 submitBtn.disabled = false;
                 statusText.innerText = `● 營業中 (${schedule.open_time.slice(0,5)}-${schedule.close_time.slice(0,5)})`;
                 statusText.style.background = "rgba(39, 174, 96, 0.4)";
                 return true;
             } else {
-                closedMsg.classList.remove('hidden'); // 非營業中顯示遮罩
+                closedMsg.classList.remove('hidden');
                 document.getElementById('open-time-hint').innerText = (schedule && schedule.is_enabled) 
                     ? `今日開放時段：\n${schedule.open_time.slice(0,5)} - ${schedule.close_time.slice(0,5)}` 
                     : "今日公休中";
@@ -140,7 +158,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
             }
         }
 
-        // --- 3. 產品載入 ---
         async function fetchProducts() {
             const { data } = await supabaseClient.from('products').select('*').eq('is_active', true).order('price');
             products = data;
@@ -171,7 +188,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
             document.getElementById('total-val').innerText = total;
         }
 
-        // --- 4. 二次確認 Modal 邏輯 ---
         function showConfirmModal() {
             const name = document.getElementById('cust-name').value;
             const phone = document.getElementById('cust-phone').value;
@@ -180,7 +196,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
             if (!name || !phone) { alert("請填寫取餐人姓名與電話"); return; }
             if (total === 0) { alert("請先選擇便當品項"); return; }
 
-            // 生成確認清單
             let itemsHtml = "";
             products.forEach(p => {
                 if (cart[p.id] > 0) {
@@ -198,7 +213,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
             document.getElementById('confirm-overlay').classList.add('hidden');
         }
 
-        // --- 5. 正式下單 ---
         async function realSubmitOrder() {
             const name = document.getElementById('cust-name').value;
             const phone = document.getElementById('cust-phone').value;
@@ -209,14 +223,12 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
             btn.disabled = true; btn.innerText = "傳送中...";
 
             try {
-                // A. 建立訂單
                 const { data: order, error: orderErr } = await supabaseClient.from('orders').insert([
                     { customer_name: name, customer_phone: phone, note: note, total_amount: total, status: 'pending' }
                 ]).select().single();
 
                 if (orderErr) throw orderErr;
 
-                // B. 建立明細
                 const items = products.filter(p => cart[p.id] > 0).map(p => ({
                     order_id: order.id,
                     product_id: p.id,
