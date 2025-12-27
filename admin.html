@@ -81,7 +81,18 @@
             <section id="section-orders" class="hidden">
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center;"><h2>今日收單列表</h2><button class="btn btn-status" onclick="fetchOrders()">重新整理</button></div>
-                    <table><thead><tr><th>取貨註記</th><th>單號</th><th>客戶/電話</th><th>金額</th><th>操作</th></tr></thead><tbody id="order-list"></tbody></table>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>取貨註記</th>
+                                <th>訂單時間</th> <th>單號</th>
+                                <th>客戶/電話</th>
+                                <th>金額</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="order-list"></tbody>
+                    </table>
                 </div>
             </section>
 
@@ -207,15 +218,21 @@
         async function fetchOrders() {
             const { data } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
             const list = document.getElementById('order-list');
-            list.innerHTML = (data || []).map(o => `
+            list.innerHTML = (data || []).map(o => {
+                // 處理日期與時間顯示
+                const dateObj = new Date(o.created_at);
+                const dateStr = dateObj.toLocaleDateString('zh-TW'); // 格式如 2025/12/27
+                const timeStr = dateObj.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }); // 格式如 14:30
+                
+                return `
                 <tr class="${o.status === 'picked_up' ? 'order-picked-up' : ''}">
                     <td><input type="checkbox" onchange="updateOrderStatus('${o.id}', this.checked)" ${o.status === 'picked_up' ? 'checked' : ''}> 已取貨</td>
-                    <td>${o.id.slice(0,8)}</td>
+                    <td>${dateStr}<br><small>${timeStr}</small></td> <td>${o.id.slice(0,8)}</td>
                     <td>${o.customer_name}<br><small>${o.customer_phone}</small></td>
                     <td><b>$${o.total_amount}</b></td>
                     <td><button class="btn" onclick="printReceipt('${o.id}')" style="background:#3498db;">列印收據</button></td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         async function updateOrderStatus(id, isChecked) {
