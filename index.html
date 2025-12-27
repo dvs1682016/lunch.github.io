@@ -17,11 +17,10 @@
 
         .container { padding: 15px; max-width: 600px; margin: 0 auto; }
 
-        /* === 核心修改：2 欄佈局 === */
         #product-list {
             display: grid;
-            grid-template-columns: repeat(2, 1fr); /* 這裡設定為 2 欄 */
-            gap: 12px; /* 項目之間的間距 */
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
             margin-bottom: 20px;
         }
 
@@ -29,26 +28,24 @@
             background: white; 
             border-radius: 12px; 
             display: flex; 
-            flex-direction: column; /* 改為直式排列，讓圖片在上 */
+            flex-direction: column;
             padding: 10px; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
-            text-align: center; /* 內容置中 */
+            text-align: center;
         }
 
         .product-img { 
             width: 100%; 
-            height: 120px; /* 固定高度維持整齊 */
+            height: 120px;
             border-radius: 8px; 
             object-fit: cover; 
             border: 1px solid #eee; 
             margin-bottom: 8px;
         }
 
-        .product-info { flex: 1; padding-left: 0; }
         .product-name { font-weight: bold; font-size: 16px; margin: 0; color: #333; }
         .product-price { color: var(--primary); font-weight: bold; font-size: 15px; margin: 4px 0; }
         
-        /* 數量控制器置中 */
         .stepper { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; }
         .stepper button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid #ddd; background: white; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
         .stepper span { font-weight: bold; font-size: 16px; min-width: 20px; text-align: center; }
@@ -59,13 +56,22 @@
         .input-group label { display: block; font-size: 14px; margin-bottom: 5px; color: #666; }
         .input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
 
-        .confirm-modal { background: white; color: #333; width: 95%; max-width: 400px; border-radius: 15px; padding: 25px; text-align: left; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .confirm-modal h2 { color: var(--primary); margin-top: 0; text-align: center; font-size: 20px; }
+        /* 彈窗共通樣式 */
+        .modal-box { background: white; color: #333; width: 95%; max-width: 400px; border-radius: 15px; padding: 25px; text-align: left; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .modal-box h2 { color: var(--primary); margin-top: 0; text-align: center; font-size: 20px; }
+
+        /* 確認清單樣式 */
         .confirm-list { margin: 15px 0; border-top: 1px dashed #ddd; border-bottom: 1px dashed #ddd; padding: 10px 0; max-height: 200px; overflow-y: auto; }
         .confirm-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 16px; }
         .confirm-btns { display: grid; grid-template-columns: 1fr 1.5fr; gap: 10px; margin-top: 20px; }
-        .btn-cancel { background: #eee; color: #666; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-confirm { background: var(--success); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        
+        /* 成功彈窗特定樣式 */
+        .queue-display { font-size: 60px; font-weight: 900; color: var(--primary); margin: 20px 0; font-family: monospace; letter-spacing: 5px; text-shadow: 2px 2px 0 rgba(0,0,0,0.1); }
+
+        .btn-action { width: 100%; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .btn-cancel { background: #eee; color: #666; }
+        .btn-confirm { background: var(--success); color: white; }
+        .btn-primary { background: var(--primary); color: white; }
 
         .footer-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #eee; padding: 15px 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 200; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
         .total-amount { font-size: 22px; font-weight: bold; color: var(--primary); }
@@ -75,6 +81,7 @@
 </head>
 <body>
 
+    <!-- 營業狀態遮罩 -->
     <div id="closed-msg" class="overlay hidden">
         <div>
             <h2 style="color: var(--primary);">目前非訂購時段 🍱</h2>
@@ -82,8 +89,9 @@
         </div>
     </div>
 
+    <!-- 訂單確認彈窗 -->
     <div id="confirm-overlay" class="overlay hidden">
-        <div class="confirm-modal">
+        <div class="modal-box">
             <h2>核對訂單內容</h2>
             <div id="confirm-user-info" style="font-size: 14px; color: #666; margin-bottom: 10px; background: #f9f9f9; padding: 8px; border-radius: 4px;"></div>
             <div class="confirm-list" id="confirm-items-list"></div>
@@ -91,9 +99,21 @@
                 合計：NT$ <span id="confirm-total-val">0</span>
             </div>
             <div class="confirm-btns">
-                <button class="btn-cancel" onclick="closeConfirmModal()">回頭修改</button>
-                <button class="btn-confirm" id="final-submit-btn" onclick="realSubmitOrder()">確認無誤，送出</button>
+                <button class="btn-action btn-cancel" onclick="closeConfirmModal()">回頭修改</button>
+                <button class="btn-action btn-confirm" id="final-submit-btn" onclick="realSubmitOrder()">確認無誤，送出</button>
             </div>
+        </div>
+    </div>
+
+    <!-- 訂購成功彈窗 (新增自訂 UI 取代傳統 alert) -->
+    <div id="success-overlay" class="overlay hidden">
+        <div class="modal-box" style="text-align: center;">
+            <div style="font-size: 50px; margin-bottom: 10px;">🎉</div>
+            <h2 style="margin-bottom: 5px;">訂購成功！</h2>
+            <p style="color: #666; margin-bottom: 20px;">您的取餐號碼為</p>
+            <div id="display-queue-no" class="queue-display">000</div>
+            <p style="font-size: 14px; color: var(--danger); font-weight: bold; margin-bottom: 25px;">請記住此號碼，取餐時報號即可</p>
+            <button class="btn-action btn-primary" onclick="location.reload()">我知道了，回首頁</button>
         </div>
     </div>
 
@@ -104,7 +124,6 @@
 
     <div class="container">
         <div id="product-list"></div>
-
         <div class="form-card">
             <h3>訂購人資訊</h3>
             <div class="input-group"><label>取餐人姓名</label><input type="text" id="cust-name" placeholder="請填寫姓名"></div>
@@ -119,9 +138,8 @@
     </div>
 
     <script>
-       const SUPABASE_URL = 'https://jizwmppcyjyhmrvrdwqi.supabase.co'; 
-       const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppendtcHBjeWp5aG1ydnJkd3FpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjA3MTAsImV4cCI6MjA3NjEzNjcxMH0.H5I0Z-l9cA7g39ZhwAKJ25Y9svIuL86HCqGnNL4ADzM'; 
-
+        const SUPABASE_URL = 'https://jizwmppcyjyhmrvrdwqi.supabase.co'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppendtcHBjeWp5aG1ydnJkd3FpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjA3MTAsImV4cCI6MjA3NjEzNjcxMH0.H5I0Z-l9cA7g39ZhwAKJ25Y9svIuL86HCqGnNL4ADzM'; 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let products = [];
@@ -131,15 +149,11 @@
             const now = new Date();
             const day = now.getDay(); 
             const currentTime = now.toTimeString().split(' ')[0];
-
             const { data: schedule } = await supabaseClient.from('store_schedule').select('*').eq('day_of_week', day).single();
-
             const closedMsg = document.getElementById('closed-msg');
             const submitBtn = document.getElementById('submit-btn');
             const statusText = document.getElementById('status-text');
-
             const isOpen = schedule && schedule.is_enabled && currentTime >= schedule.open_time && currentTime <= schedule.close_time;
-
             if (isOpen) {
                 closedMsg.classList.add('hidden');
                 submitBtn.disabled = false;
@@ -148,9 +162,7 @@
                 return true;
             } else {
                 closedMsg.classList.remove('hidden');
-                document.getElementById('open-time-hint').innerText = (schedule && schedule.is_enabled) 
-                    ? `今日開放時段：\n${schedule.open_time.slice(0,5)} - ${schedule.close_time.slice(0,5)}` 
-                    : "今日公休中";
+                document.getElementById('open-time-hint').innerText = (schedule && schedule.is_enabled) ? `今日開放時段：\n${schedule.open_time.slice(0,5)} - ${schedule.close_time.slice(0,5)}` : "今日公休中";
                 submitBtn.disabled = true;
                 statusText.innerText = "○ 非營業時段";
                 statusText.style.background = "rgba(231, 76, 60, 0.4)";
@@ -192,25 +204,34 @@
             const name = document.getElementById('cust-name').value;
             const phone = document.getElementById('cust-phone').value;
             const total = parseInt(document.getElementById('total-val').innerText);
-
             if (!name || !phone) { alert("請填寫取餐人姓名與電話"); return; }
             if (total === 0) { alert("請先選擇便當品項"); return; }
-
             let itemsHtml = "";
             products.forEach(p => {
-                if (cart[p.id] > 0) {
-                    itemsHtml += `<div class="confirm-item"><span>${p.name} x ${cart[p.id]}</span><span>$${p.price * cart[p.id]}</span></div>`;
-                }
+                if (cart[p.id] > 0) itemsHtml += `<div class="confirm-item"><span>${p.name} x ${cart[p.id]}</span><span>$${p.price * cart[p.id]}</span></div>`;
             });
-
             document.getElementById('confirm-user-info').innerHTML = `<b>取餐人：</b>${name}<br><b>電話：</b>${phone}`;
             document.getElementById('confirm-items-list').innerHTML = itemsHtml;
             document.getElementById('confirm-total-val').innerText = total;
             document.getElementById('confirm-overlay').classList.remove('hidden');
         }
 
-        function closeConfirmModal() {
-            document.getElementById('confirm-overlay').classList.add('hidden');
+        function closeConfirmModal() { document.getElementById('confirm-overlay').classList.add('hidden'); }
+
+        async function getNextQueueNo() {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const isoToday = today.toISOString();
+            
+            const { data } = await supabaseClient
+                .from('orders')
+                .select('queue_no')
+                .gte('created_at', isoToday)
+                .order('queue_no', { ascending: false })
+                .limit(1);
+            
+            const lastNo = (data && data.length > 0) ? data[0].queue_no : 0;
+            return lastNo + 1;
         }
 
         async function realSubmitOrder() {
@@ -223,8 +244,11 @@
             btn.disabled = true; btn.innerText = "傳送中...";
 
             try {
+                const nextNo = await getNextQueueNo();
+                const displayNo = String(nextNo).padStart(3, '0');
+
                 const { data: order, error: orderErr } = await supabaseClient.from('orders').insert([
-                    { customer_name: name, customer_phone: phone, note: note, total_amount: total, status: 'pending' }
+                    { customer_name: name, customer_phone: phone, note: note, total_amount: total, status: 'pending', queue_no: nextNo }
                 ]).select().single();
 
                 if (orderErr) throw orderErr;
@@ -236,11 +260,13 @@
                     unit_price: p.price
                 }));
 
-                const { error: itemErr } = await supabaseClient.from('order_items').insert(items);
-                if (itemErr) throw itemErr;
+                await supabaseClient.from('order_items').insert(items);
 
-                alert("🎉 訂購成功！請準時前來取餐。");
-                location.reload(); 
+                // --- 修改點：隱藏確認視窗，顯示自訂成功視窗 ---
+                document.getElementById('confirm-overlay').classList.add('hidden');
+                document.getElementById('display-queue-no').innerText = displayNo;
+                document.getElementById('success-overlay').classList.remove('hidden');
+                
             } catch (err) {
                 alert("下單失敗：" + err.message);
                 btn.disabled = false; btn.innerText = "重新送出";

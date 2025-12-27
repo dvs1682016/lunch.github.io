@@ -9,36 +9,23 @@
         :root { --primary: #e67e22; --dark: #2c3e50; --light: #f4f7f6; --success: #27ae60; --danger: #e74c3c; --info: #3498db; }
         body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; margin: 0; background: var(--light); color: var(--dark); }
         .hidden { display: none !important; }
-        
-        /* 頁首 */
         header { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
         .header-right { display: flex; align-items: center; gap: 15px; }
         #admin-display-email { font-size: 14px; background: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.3); font-weight: bold; }
-
-        /* 導覽列 */
         nav { background: #fff; padding: 0 2rem; border-bottom: 1px solid #ddd; display: flex; gap: 10px; }
         nav button { padding: 15px 20px; cursor: pointer; border: none; background: none; font-size: 16px; font-weight: bold; color: #666; transition: 0.3s; }
         nav button.active { color: var(--primary); border-bottom: 3px solid var(--primary); }
-        
         .container { padding: 2rem; max-width: 1200px; margin: 0 auto; }
         .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 2rem; }
-        
-        /* 表格 */
         table { width: 100%; border-collapse: collapse; }
         th, td { text-align: left; padding: 15px; border-bottom: 1px solid #eee; }
         .product-img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; }
-        
         .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; color: white; }
         .btn-add { background: var(--success); margin-bottom: 15px; }
-        .btn-edit { background: var(--info); margin-right: 5px; }
-        .btn-delete { background: var(--danger); }
         .btn-logout { background: rgba(255,255,255,0.2); border: 1px solid white; }
         .btn-status { background: #95a5a6; }
-        .btn-active { background: var(--success); }
-
-        /* 已取貨列效果 */
         .order-picked-up { background-color: #f9f9f9; opacity: 0.6; }
-
+        .queue-no-badge { background: #2c3e50; color: white; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-family: monospace; }
         .schedule-row { display: grid; grid-template-columns: 100px 100px 1fr 1fr; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index: 1000; }
         .modal-content { background: white; padding: 2rem; border-radius: 12px; width: 400px; }
@@ -60,32 +47,28 @@
     <div id="admin-dashboard" class="hidden">
         <header>
             <div style="font-size: 20px; font-weight: bold;">🍱 便當店管理後台</div>
-            <div class="header-right">
-                <span id="admin-display-email"></span>
-                <button onclick="handleLogout()" class="btn btn-logout">登出</button>
-            </div>
+            <div class="header-right"><span id="admin-display-email"></span><button onclick="handleLogout()" class="btn btn-logout">登出</button></div>
         </header>
-
         <nav>
             <button onclick="showSection('products')" id="tab-products" class="active">品項管理</button>
             <button onclick="showSection('orders')" id="tab-orders">今日訂單</button>
             <button onclick="showSection('settings')" id="tab-settings">營業設定</button>
         </nav>
-
         <div class="container">
             <section id="section-products">
-                <button class="btn btn-active btn-add" onclick="showModal()">+ 新增便當</button>
+                <button class="btn btn-success btn-add" onclick="showModal()">+ 新增便當</button>
                 <div class="card"><table><thead><tr><th>照片</th><th>名稱</th><th>金額</th><th>狀態</th><th>操作</th></tr></thead><tbody id="product-list"></tbody></table></div>
             </section>
-
             <section id="section-orders" class="hidden">
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center;"><h2>今日收單列表</h2><button class="btn btn-status" onclick="fetchOrders()">重新整理</button></div>
                     <table>
                         <thead>
                             <tr>
-                                <th>取貨註記</th>
-                                <th>訂單時間</th> <th>單號</th>
+                                <th>狀態</th>
+                                <th>取餐號</th>
+                                <th>下單時間</th>
+                                <th>單號</th>
                                 <th>客戶/電話</th>
                                 <th>金額</th>
                                 <th>操作</th>
@@ -95,11 +78,10 @@
                     </table>
                 </div>
             </section>
-
             <section id="section-settings" class="hidden">
                 <div class="card">
                     <h2>營業時段與日期設定</h2>
-                    <div id="schedule-list"></div> <button class="btn btn-active" onclick="saveSchedule()" style="margin-top:20px; width:100%; padding:12px; font-size:16px;">儲存所有營業設定</button>
+                    <div id="schedule-list"></div><button class="btn btn-active" onclick="saveSchedule()" style="margin-top:20px; width:100%; padding:12px; font-size:16px; background: var(--primary); color: white;">儲存所有營業設定</button>
                 </div>
             </section>
         </div>
@@ -112,17 +94,15 @@
             <div style="margin-bottom:15px;"><label>名稱</label><input type="text" id="p-name" style="width:100%;padding:10px;"></div>
             <div style="margin-bottom:15px;"><label>金額</label><input type="number" id="p-price" style="width:100%;padding:10px;"></div>
             <div style="margin-bottom:20px;"><label>照片</label><input type="file" id="p-image" accept="image/*"></div>
-            <div style="text-align:right;"><button onclick="closeModal()" style="padding:8px 16px; margin-right:8px;">取消</button><button class="btn btn-active" onclick="handleSaveProduct()">儲存上架</button></div>
+            <div style="text-align:right;"><button onclick="closeModal()" style="padding:8px 16px; margin-right:8px;">取消</button><button class="btn btn-success" onclick="handleSaveProduct()" style="background: var(--success);">儲存上架</button></div>
         </div>
     </div>
 
     <script>
        const SUPABASE_URL = 'https://jizwmppcyjyhmrvrdwqi.supabase.co'; 
        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppendtcHBjeWp5aG1ydnJkd3FpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjA3MTAsImV4cCI6MjA3NjEzNjcxMH0.H5I0Z-l9cA7g39ZhwAKJ25Y9svIuL86HCqGnNL4ADzM'; 
+       const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // --- 1. 登入與身份 ---
         async function handleLogin() {
             const btn = document.getElementById('login-btn');
             const email = document.getElementById('login-email').value;
@@ -162,7 +142,6 @@
             if (name === 'orders') fetchOrders();
         }
 
-        // --- 2. 產品管理 ---
         async function fetchProducts() {
             const { data } = await supabaseClient.from('products').select('*').order('created_at', { ascending: false });
             const list = document.getElementById('product-list');
@@ -171,8 +150,8 @@
                     <td><img src="${p.image_url}" class="product-img"></td>
                     <td><b>${p.name}</b></td>
                     <td>$${p.price}</td>
-                    <td><button class="btn ${p.is_active ? 'btn-active' : 'btn-status'}" onclick="toggleActive('${p.id}', ${p.is_active})">${p.is_active ? '上架中' : '已下架'}</button></td>
-                    <td><button class="btn btn-edit" onclick="editProduct('${p.id}')">編輯</button><button class="btn btn-delete" onclick="deleteProduct('${p.id}')">刪除</button></td>
+                    <td><button class="btn ${p.is_active ? 'btn-active' : 'btn-status'}" style="background:${p.is_active?'#27ae60':'#95a5a6'}" onclick="toggleActive('${p.id}', ${p.is_active})">${p.is_active ? '上架中' : '已下架'}</button></td>
+                    <td><button class="btn" style="background:#3498db;margin-right:5px;" onclick="editProduct('${p.id}')">編輯</button><button class="btn" style="background:#e74c3c" onclick="deleteProduct('${p.id}')">刪除</button></td>
                 </tr>
             `).join('');
         }
@@ -183,51 +162,21 @@
             showModal(data); 
         }
 
-        // --- 3. 營業設定 (修正點：內含 days 變數) ---
-        async function fetchSchedule() {
-            const container = document.getElementById('schedule-list');
-            const days = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
-            
-            try {
-                const { data, error } = await supabaseClient.from('store_schedule').select('*').order('day_of_week');
-                if (error) throw error;
-                container.innerHTML = (data || []).map(s => `
-                    <div class="schedule-row" data-id="${s.id}">
-                        <span style="font-weight:bold;">${days[s.day_of_week]}</span>
-                        <label><input type="checkbox" ${s.is_enabled ? 'checked' : ''} class="sched-enabled"> 開放</label>
-                        <input type="time" value="${s.open_time}" class="sched-open" style="padding:5px;">
-                        <input type="time" value="${s.close_time}" class="sched-close" style="padding:5px;">
-                    </div>
-                `).join('');
-            } catch (e) { console.error(e); }
-        }
-
-        async function saveSchedule() {
-            const rows = document.querySelectorAll('.schedule-row');
-            for (let row of rows) {
-                const id = row.getAttribute('data-id');
-                const is_enabled = row.querySelector('.sched-enabled').checked;
-                const open_time = row.querySelector('.sched-open').value;
-                const close_time = row.querySelector('.sched-close').value;
-                await supabaseClient.from('store_schedule').update({ is_enabled, open_time, close_time }).eq('id', id);
-            }
-            alert("營業設定更新成功！");
-        }
-
-        // --- 4. 訂單管理 ---
         async function fetchOrders() {
             const { data } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
             const list = document.getElementById('order-list');
             list.innerHTML = (data || []).map(o => {
-                // 處理日期與時間顯示
                 const dateObj = new Date(o.created_at);
-                const dateStr = dateObj.toLocaleDateString('zh-TW'); // 格式如 2025/12/27
-                const timeStr = dateObj.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }); // 格式如 14:30
-                
+                const dateStr = dateObj.toLocaleDateString('zh-TW');
+                const timeStr = dateObj.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+                const qNo = String(o.queue_no || 0).padStart(3, '0');
+
                 return `
                 <tr class="${o.status === 'picked_up' ? 'order-picked-up' : ''}">
                     <td><input type="checkbox" onchange="updateOrderStatus('${o.id}', this.checked)" ${o.status === 'picked_up' ? 'checked' : ''}> 已取貨</td>
-                    <td>${dateStr}<br><small>${timeStr}</small></td> <td>${o.id.slice(0,8)}</td>
+                    <td><span class="queue-no-badge">${qNo}</span></td>
+                    <td>${dateStr}<br><small>${timeStr}</small></td>
+                    <td>${o.id.slice(0,8)}</td>
                     <td>${o.customer_name}<br><small>${o.customer_phone}</small></td>
                     <td><b>$${o.total_amount}</b></td>
                     <td><button class="btn" onclick="printReceipt('${o.id}')" style="background:#3498db;">列印收據</button></td>
@@ -242,10 +191,12 @@
 
         async function printReceipt(orderId) {
             const { data: order } = await supabaseClient.from('orders').select('*, order_items(*, products(name))').eq('id', orderId).single();
+            const qNo = String(order.queue_no || 0).padStart(3, '0');
             const win = window.open('', '_blank');
             win.document.write(`
                 <html><body style="font-family:monospace; width:80mm; padding:10px;">
-                    <h2 style="text-align:center;">收據存根</h2><hr>
+                    <h1 style="text-align:center; font-size: 30px; margin-bottom: 5px;"># ${qNo}</h1>
+                    <h2 style="text-align:center; margin-top: 0;">收據存根</h2><hr>
                     <p>日期: ${new Date(order.created_at).toLocaleString()}</p>
                     <p>客戶: ${order.customer_name}<br>電話: ${order.customer_phone}</p><hr>
                     ${order.order_items.map(i => `<div style="display:flex; justify-content:space-between;"><span>${i.products.name} x ${i.quantity}</span><span>$${i.unit_price * i.quantity}</span></div>`).join('')}
@@ -256,10 +207,30 @@
             win.document.close();
         }
 
-        // 修正後的登出功能
-        async function handleLogout() { 
-            await supabaseClient.auth.signOut(); // 等待登出完成
-            checkAuth(); // 重新檢查身份，會觸發 UI 切換回登入頁
+        async function handleLogout() { await supabaseClient.auth.signOut(); checkAuth(); }
+        async function fetchSchedule() {
+            const container = document.getElementById('schedule-list');
+            const days = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
+            const { data } = await supabaseClient.from('store_schedule').select('*').order('day_of_week');
+            container.innerHTML = (data || []).map(s => `
+                <div class="schedule-row" data-id="${s.id}">
+                    <span style="font-weight:bold;">${days[s.day_of_week]}</span>
+                    <label><input type="checkbox" ${s.is_enabled ? 'checked' : ''} class="sched-enabled"> 開放</label>
+                    <input type="time" value="${s.open_time}" class="sched-open" style="padding:5px;">
+                    <input type="time" value="${s.close_time}" class="sched-close" style="padding:5px;">
+                </div>
+            `).join('');
+        }
+        async function saveSchedule() {
+            const rows = document.querySelectorAll('.schedule-row');
+            for (let row of rows) {
+                const id = row.getAttribute('data-id');
+                const is_enabled = row.querySelector('.sched-enabled').checked;
+                const open_time = row.querySelector('.sched-open').value;
+                const close_time = row.querySelector('.sched-close').value;
+                await supabaseClient.from('store_schedule').update({ is_enabled, open_time, close_time }).eq('id', id);
+            }
+            alert("營業設定更新成功！");
         }
 
         function closeModal() { document.getElementById('product-modal').classList.add('hidden'); }
