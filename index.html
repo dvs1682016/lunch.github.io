@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>美味便當 - 線上訂購系統</title>
+    
+    <title>🍱美味便當 - 線上訂購系統</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="🍱便當">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <link rel="manifest" href="manifest.json">
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #e67e22; --light: #fdfaf6; --dark: #333; --success: #27ae60; --danger: #e74c3c; }
@@ -81,7 +90,6 @@
 </head>
 <body>
 
-    <!-- 營業狀態遮罩 -->
     <div id="closed-msg" class="overlay hidden">
         <div>
             <h2 style="color: var(--primary);">目前非訂購時段 🍱</h2>
@@ -89,7 +97,6 @@
         </div>
     </div>
 
-    <!-- 訂單確認彈窗 -->
     <div id="confirm-overlay" class="overlay hidden">
         <div class="modal-box">
             <h2>核對訂單內容</h2>
@@ -105,7 +112,6 @@
         </div>
     </div>
 
-    <!-- 訂購成功彈窗 (新增自訂 UI 取代傳統 alert) -->
     <div id="success-overlay" class="overlay hidden">
         <div class="modal-box" style="text-align: center;">
             <div style="font-size: 50px; margin-bottom: 10px;">🎉</div>
@@ -262,7 +268,6 @@
 
                 await supabaseClient.from('order_items').insert(items);
 
-                // --- 修改點：隱藏確認視窗，顯示自訂成功視窗 ---
                 document.getElementById('confirm-overlay').classList.add('hidden');
                 document.getElementById('display-queue-no').innerText = displayNo;
                 document.getElementById('success-overlay').classList.remove('hidden');
