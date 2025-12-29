@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>便當店後台管理系統 - 專業穩定版</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- 引入 Chart.js 用於生成圖表 -->
+    <!-- 引入 Chart.js 與 DataLabels 插件 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <style>
         :root { --primary: #e67e22; --dark: #2c3e50; --light: #f4f7f6; --success: #27ae60; --danger: #e74c3c; --info: #3498db; }
         body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; margin: 0; background: var(--light); color: var(--dark); }
@@ -176,7 +177,10 @@
 
         let mySalesChart = null; 
 
-        // 預設顏色清單 [cite: admin.html]
+        // 註冊 DataLabels 插件
+        Chart.register(ChartDataLabels);
+
+        // 預設顏色清單
         const chartColors = [
             '#e67e22', '#27ae60', '#3498db', '#e74c3c', '#9b59b6', 
             '#f1c40f', '#1abc9c', '#34495e', '#d35400', '#2ecc71'
@@ -251,7 +255,6 @@
                 const endDate = new Date(end);
                 endDate.setHours(23,59,59,999);
 
-                // 1. 抓取所有產品清單 (確保無銷售項目亦須呈現) [cite: admin.html]
                 const { data: productsData } = await supabaseClient.from('products').select('id, name');
                 const productMap = {};
                 const summary = {};
@@ -260,7 +263,6 @@
                     summary[p.id] = { name: p.name, qty: 0, subtotal: 0 };
                 });
 
-                // 2. 抓取日期區間內的訂單
                 const { data: orders, error: oError } = await supabaseClient.from('orders')
                     .select('id, total_amount')
                     .gte('created_at', startDate.toISOString())
@@ -275,7 +277,6 @@
                     const orderIds = orders.map(o => o.id);
                     totalAmount = orders.reduce((sum, o) => sum + o.total_amount, 0);
 
-                    // 3. 抓取訂單細項
                     const { data: items, error: iError } = await supabaseClient.from('order_items')
                         .select('product_id, quantity, unit_price')
                         .in('order_id', orderIds);
@@ -291,7 +292,6 @@
                     });
                 }
 
-                // 4. 渲染數據
                 document.getElementById('stats-total-money').innerText = totalAmount.toLocaleString();
                 document.getElementById('stats-total-qty').innerText = totalQty.toLocaleString();
 
@@ -304,7 +304,6 @@
                     </tr>
                 `).join('');
 
-                // 5. 渲染圖表
                 renderSalesChart(sortedSummary);
 
             } catch (err) {
@@ -320,7 +319,6 @@
             const labels = data.map(item => item.name);
             const counts = data.map(item => item.qty);
             
-            // 生成不同顏色 [cite: admin.html]
             const bgColors = data.map((_, index) => chartColors[index % chartColors.length]);
 
             if (mySalesChart) {
@@ -342,8 +340,24 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 25 // 預留頂部空間給標籤
+                        }
+                    },
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        // 配置頂部資料標籤
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: (value) => value, // 顯示數值
+                            color: '#2c3e50',
+                            font: {
+                                weight: 'bold',
+                                size: 14
+                            }
+                        }
                     },
                     scales: {
                         y: {
@@ -354,8 +368,6 @@
                 }
             });
         }
-
-        // --- 原有訂單與管理邏輯 ---
 
         async function fetchTodayOrders() {
             const todayStart = new Date();
